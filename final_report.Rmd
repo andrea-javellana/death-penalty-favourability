@@ -1,0 +1,235 @@
+---
+title: "National support for the death penalty dropped by 1.5% while state-level favouribility changed over 3%  in just three years."
+author: "Andrea Javellana"
+date: "22 December 2020"
+output: pdf_document
+abstract:
+  With the hostile political climate America sits in, topics such as abolishing the death penalty are under more debate than ever. In this paper I use multilevel regression with post-stratification to accurately gauge American support in favour of the death penalty . To do this, I compared census data from the American Community Survey and poll data gathered by Pew Research Centre, in 2015 and 2018. We observed that in those three years, there was an overall 1.5% drop in support while state-level changes went about 3.2% either direction. The methods I used can be applied to observe public opinion on political hot topics and my results can help track and predict where the death penalty’s favourability is heading. 
+  
+Keywords: Death Penalty, Tracking trends, Public opinion polling, Societal Values, Multilevel Regression with Post-stratification"
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+
+library(tint)
+library(kableExtra)
+library(tidyverse)
+library(tinytex)
+library(knitr)
+library(here)
+
+
+
+```
+
+**Keywords**: Death Penalty, Tracking trends, Public opinion polling, Societal Values, Multilevel Regression with Post-stratification
+
+# 1. Introduction
+As of December 11 of 2020, five executions are scheduled to take place before Joe Biden‘s inauguration. Should all five happen, president Trump will have the highest execution rate over any other president of the last century (Honderich, 2020).This has caused much debate on whether the death penalty should be abolished. So far there have been opinion polls suggesting a slight increase of support in continuing the death penalty (Gallup Poll, 2019) while other polls claim a continued decrease (Young, 2018). These public opinion polls are usually done over long periods of time and of smaller samples which may be the cause for contradicting outcomes. Because of this, I set out to find what the most recent and accurate numbers are regarding death penalty favourability in America.
+ 
+One of the most recent and popular techniques to correct estimates between a sample population from a survey and target population is through multilevel regression with post-stratification (MRP) (Wang et al., 2015). Nation-wide, I will be estimating the likelihood respondents support the death penalty based on demographic variables such as age race education attainment and more. To do this I needed both public opinion survey data and a dataset of national demographics. I used Pew Research’s March 2015 and May 2018 public polling data as well as corresponding census data from the American Community Survey. 
+ 
+My analysis suggests that in 2018, public support in favour of the death penalty was at 58% which was a 1.45% drop from 2015. My analysis also shows that the change in state favourability is much greater across the three years averaging a change of 3.2% in either direction.
+ 
+While this study doesn’t account for the level of the favourability or the conditional support (such as change in favourability if death penalty implemented on mentally ill people or juveniles),  it holds notable importance in tracking and predicting trends of politicized topics while opening opportunities to research more about changes in societal values on a state-level.
+ 
+The report is structured as follows: Section 2 discusses the datasets and methodology used to collect information as well as the data cleaning process. Section 3 introduces and breaks down the type of model I used and how it was tailored to the specific data on hand. Section 4 presents the results from the model. And section 5 presents explanations to why we are seeing such results, limitations, and opportunities for future work.
+
+# 2. Data
+## Pew Research Political Survey
+Since I am measuring death penalty favourability in both 2018 and 2015 I will need datasets for both years. The survey datasets that I used are from the Pew Research Center. They offer public polling opinions on a variety of topics. Pew Research Centre collects monthly surveys on American political trends. The specific datasets I used are titled  ‘May 2018 Political Survey’ and ‘March 2015 Political survey’. Both survey's target population was non-institutionalized persons aged 18 and over living in the United States in which interviewers verified a respondent was of age before proceeding. The surveys had a sample of about 1500 respondents selected randomly by their phone number using random digital dial frames.  The sample weighting was set to match the demographic parameters from the American Community Survey and telephone status parameters from the national health interview survey (Oliphant, 2018, Pew Research). 
+
+The methodology was the same for both surveys. Samples were drawn from both the landline and cell phone random digital dial frames with equal probabilities. However, cellphone numbers were screened out of landline phone samples but not vice-versa which changed the probability for someone with only a landline. To maximize probability of contacting a respondent, up to 7 calls per number were staggered over different times and each number received at least one daytime call. Response rate for both ended up being around 8%.  In an attempt to contact younger respondents, landline interviewers asked to speak with the youngest male or female currently at home. Also, interviews were offered in both English and Spanish. 
+
+Of the 150 or so variables from the Pew Research surveys, I focused on six demographic independent variables (age, sex, race, income, education, state) and one dependent variable of interest (death penalty favourability). The dependent variable asked *do you strongly favour, favour, oppose, or strongly oppose the death penalty for persons convicted of murder?*. I turned this variable into a binary variable-- if respondents favour(1) or oppose(0) the death penalty. Education attainment was grouped into six categories ranging from less than high school to post graduate degree. State names were kept as numeric values to easily match up with census data. Variable (column) names as well as observations for Race and Sex were minorly adjusted to match with census data. All values that were considered “don’t know” or “refuse to answer” were taken out.
+
+
+## American Community Survey
+In order to post-stratify, I used the American Community Survey from the Integrated Public Use Microdata US project (IPUMS) website (Ruggles, 2020). The American Community Survey has been part of the US Census Bureau since 2000 as a source of information about the American population and it’s housing characteristics (US Bureau, 2020). This survey is mandatory which means a high response rate/accuracy and is conducted annually, helping to determine federal funding in America (target population). The ACS contacts around 3.5 million people to be interviewed through a master address file (frame). Services offered include internet, mail, telephone, or in-person based interviews as well as strict confidentiality. However, the ACS lacks important demographic variables such as political ideology and religion.
+
+From the IPUMS website, I extracted the six demographic variables that corresponded— age, race, sex, education, income, state. While they did not match exactly initially, I was able to construct variables tailored to the survey data. For example, I limited the age range to match. I also simplified the race variable into the four possible outcomes of the survey data. This was done by making Hispanic a binary variable and applying that to override a race observation if Hispanic = TRUE. I also grouped education attainment and income into bins matching the survey. This was done for both the 2018 and 2015 ACS datasets.
+
+# 3. Model
+MRP is used to balance the representation of variables across the target population from a small sample. With MRP you are able to have greater confidence in inferences from your sample. To do this, we must post-stratify. This involves classifying members of a population into strata or cells to then calculate the probability of an outcome for each distinct cell using a regression model (CITE).
+ 
+To prepare my cells of all the possible combinations of predictor variables, I use the matching demographic variables from the datasets: age(92), race(4), state(51), education(6), sex(2), income(9).  Getting 337824 distinct cells. While I initially chose to not group age, this may have backfired by potentially making my model too specific. The rest of the variables have been proven to vary greatly in whether an American supports the death penalty (Vidmar & Ellsworth,1974).  These variables have been used to predict for other political topics and trending societal value (Gross, 2018). Variables such as education had to be inputted as a numeric vector since it was significant.
+ 
+Since we are modelling the results of death penalty favourability as a binary variable, I ran a logistic regression model using the glmer function (Bates et al., 2015) from lmer package in R(R Core Team, 2020) on the Pew Research Survey for both 2015 and 2018. Since death penalty favourability is measured as a binary variable where 1 is in favour, this interprets the models’ output as the probability of a person being in favour of the death penalty. Each of the delta are the demographic variables which are independent variables used to predict the dependent variable on the other side of the equation.
+$$ P(InFavourOfDeathPen) = logit^{-1}(\delta_0  +  \delta_1sex_i + \delta_2age_i + \delta_3education_i + \delta_4race_i + \delta_5income_i +\delta_6(1|state_i))$$
+ 
+Challenges of MRP involve finding observations that do not overlap, are clearly classified, accurately reflect the population, and finding datasets for an entire population that fall in line with the original sample. I ran into this problem of trying to find a dataset that had perfectly matching variables. As previously mentioned, the ACS does not have variables known to affect favourability such as political ideology and religion. 
+
+
+
+# 4. Results
+
+#### Table 1
+```{r, figures-side-summary, fig.show="hold", include = TRUE, echo = FALSE}
+# load data
+summary <- read_csv(("C:/Users/Andrea/Desktop/May18/summary.csv"), col_types = cols( 
+                                                             post_strat_mean = col_character(),
+                                                             sd = col_factor(),
+                                                             lower = col_factor(),
+                                                             upper = col_factor(),
+                                                             year = col_number()
+)
+)
+
+#present data 
+knitr::kable(summary[1:2,1:5], format="markdown")
+
+```
+
+Table 1 displays the summary statistics for favourability in both 2018 and 2015. We can see that there was an overall decrease in support of about 1.45% in these three years. Figure 1(a) shows the estimated favourability for the death penalty in each state in 2018. We see that in the Midwest there is higher support for the death penalty and lowest support of under 50% is in the District of Columbia. Figure 1(b) does the same but for 2015 where there was even stronger support. By comparing both Figure 1 (a) and (b), we can see more significant changes in death penalty favourabiltiy at a state-level though we know only a 1.5% dropped overall. If you are interested to know how much each state changed in those three years, refer to Figure i in the Appendix.
+
+\newpage
+
+**Figure 1(a) and (b)**
+
+```{r, figures-side-map, fig.show="hold", out.width="50%", include = TRUE, echo = FALSE}
+#FIGURE 1
+# (a) 2018 map
+# (b) 2015 map
+
+knitr::include_graphics(("C:/Users/Andrea/Desktop/May18/death-penalty-favourability/visuals/2018map.pdf"))
+
+
+knitr::include_graphics(("C:/Users/Andrea/Desktop/May18/death-penalty-favourability/visuals/2015map.pdf"))
+```
+
+
+Figure 2 shows the estimates of favourability across individual demographic variables. These predicted proportions are seen for both the survey data (grey dotted line) and post stratified (solid black line). From Figure 2, race, gender and education attainment clearly factors respondent's death penalty favourability. White people were much more likely to be in support (65%) in comparison to black people-- estimations of about 40% support. There is also a clear negative correlation with education attainment. The results show the more educated a respondent is, the less likely a respondent is to favour the death penalty. Finally, a respondents’ sex factors in as analysis shows that males tend to favour the death penalty 10% more so than females. As a whole, the 2018 survey generally matched the distribution of ACS census data.
+
+ 
+For more visualizations of the statistical analysis done on 2015 data using the model, please refer to the *Appendix* Figure ii.
+
+
+**Figure 2**
+
+```{r, figures-side-demo, fig.show="hold", out.width="33%", include = TRUE, echo = FALSE}
+#FIGURE 2
+
+knitr::include_graphics(("C:/Users/Andrea/Desktop/May18/death-penalty-favourability/visuals/2018survey_versus_poststrat_RACE.pdf"))
+
+knitr::include_graphics(("C:/Users/Andrea/Desktop/May18/death-penalty-favourability/visuals/2018survey_versus_poststrat_EDUCATION.pdf"))
+
+knitr::include_graphics(("C:/Users/Andrea/Desktop/May18/death-penalty-favourability/visuals/2018survey_versus_poststrat_SEX.pdf"))
+```
+ 
+
+\newpage
+
+
+# 5. Discussion
+Our model shows that notable swing states from the 2016 election such as North Carolina and Indiana had higher change in favourability of three years. This highlights the importance of considering Political ideology– which the model lacks. However political ideology is heavily based on the demographic variables that  were accounted for in this model. This means that while and overall national change and support is smaller, there is state-level unrest about death penalty favourability which is probably attributed to the hostile political climate of the US with the Obama administration transitioning to present day Trump administration in power. Income and age were somewhat negligible, though there was a slight positive increase of support with age. This is likely due to trends of younger people being more liberal and older people being more conservative. Black people are known to heavily lean left in politics (Ismail et al., 2020) which is likely why we are seeing low values of support for the death penalty there. 
+
+While this model captures enhanced estimates by being considered over a large distribution from the census data, there are weaknesses. By age being unbinned,  this may have caused the model to be too specific and not display strong trends. Again, key demographic variables such as political ideology and religion were missing. This model also does not account for the difference of those strongly in favour versus somewhat in favour. Nor does it account for for why a respondent may support or oppose the death penalty. Questions like these can be brought up in future research to better understand the trends seen at  national and state-level which in turn could potentially better predict the direction of favourability for the death penalty and other politicized topics in the future.
+
+
+# Appendix
+All code used to generate this report can be found here:
+<https://github.com/andrea-javellana/death-penalty-favourability>.
+
+
+#### Figure i
+Depicting change in favourability from 2015-2018. 
+Negative values in *X..change.in.favourability* indicate a loss of support for the death penalty over the years
+```{r, figures-side-statesdata, fig.show="hold", include = TRUE, echo = FALSE}
+# load data
+States_data <- read_csv(("C:/Users/Andrea/Desktop/May18/states_data.csv"), col_types = cols( 
+                                                             state = col_character(),
+                                                             X..change.in.favourability = col_factor(),
+                                                            X2015.favourability = col_factor(),
+                                                            X2018.favourability = col_factor()
+                                                      
+)
+)
+
+
+
+#present data 
+knitr::kable(States_data[1:51,1:4], format="markdown")
+
+```
+
+**Figure ii**
+Running the model on 2015 data
+```{r, figures-side-2015, fig.show="hold", out.width="33%", include = TRUE, echo = FALSE}
+#FIGURE 2
+
+knitr::include_graphics(("C:/Users/Andrea/Desktop/May18/death-penalty-favourability/visuals/2015survey_versus_poststrat_RACE.pdf"))
+
+knitr::include_graphics(("C:/Users/Andrea/Desktop/May18/death-penalty-favourability/visuals/2015survey_versus_poststrat_EDUCATION.pdf"))
+
+knitr::include_graphics(("C:/Users/Andrea/Desktop/May18/death-penalty-favourability/visuals/2015survey_versus_poststrat_SEX.pdf"))
+```
+
+
+\newpage
+
+
+# References
+
+Dirk Eddelbuettel and Jonathan Gilligan (2020). tint: 'tint' is not 'Tufte'. R package version 0.1.3. https://CRAN.R-project.org/package=tint
+
+Douglas Bates, Martin Maechler, Ben Bolker, Steve Walker (2015). Fitting Linear Mixed-Effects Models Using lme4. Journal of Statistical Software, 67(1),1-48. doi:10.18637/jss.v067.i01.
+
+Gallup Poll-For First Time, Majority of Americans Prefer Life Sentence To Capital Punishment. (2019). Retrieved from https://deathpenaltyinfo.org/news/gallup-poll-for-first-time-majority-of-americans-prefer-life-sentence-to-capital-punishment
+
+Gross, S. R. (2018). The death penalty, public opinion, and politics in the united states. Saint Louis University Law Journal, 62(4), 763-780.
+
+Hadley Wickham (2011). The Split-Apply-Combine Strategy for Data Analysis. Journal of Statistical Software, 40(1), 1-29. URL http://www.jstatsoft.org/v40/i01/.
+
+Hadley Wickham and Evan Miller (2020). haven: Import and Export 'SPSS', 'Stata' and 'SAS' Files. R package version 2.3.1. https://CRAN.R-project.org/package=haven
+
+Hao Zhu (2020). kableExtra: Construct Complex Table with 'kable' and Pipe Syntax. R package version 1.3.1. https://CRAN.R-project.org/package=kableExtra
+
+Hlavac, Marek (2018). stargazer: Well-Formatted Regression and Summary Statistics Tables. R package version 5.2.1. https://CRAN.R-project.org/package=stargazer
+
+Honderich, H. (2020, December 11). In Trump's final days, a rush of federal executions. Retrieved from https://www.bbc.com/news/world-us-canada-55236260
+
+Ismail K., White, Cheryl, N., & Laird. (2020). Norms of Black Political Behavior. Steadfast Democrats, 56-85. doi:10.2307/j.ctvp7d4m7.6
+
+Kirill Müller (2020). here: A Simpler Way to Find Your Files. R package version 1.0.1. https://CRAN.R-project.org/package=here
+
+Oliphant, J. (2020, May 30). U.S. support for death penalty ticks up in 2018. Retrieved https://www.pewresearch.org/fact-tank/2018/06/11/us-support-for-death-penalty-ticks-up-2018/
+Paolo Di Lorenzo (2020). usmap: US Maps Including Alaska and Hawaii. R package version 0.5.1. https://CRAN.R-project.org/package=usmap
+
+Pew Research Center. (2020). US support for death penalty ticks up, Washington, D.C. https://www.pewresearch.org/fact-tank/2018/06/11/us-support-for-death-penalty-ticks-up-2018/
+
+R Core Team (2020). R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.
+
+RStudio Team (2019). RStudio: Integrated Development for R. RStudio, Inc., Boston, MA URL http://www.rstudio.com/.
+
+Steven Ruggles, Sarah Flood, Ronald Goeken, Josiah Grover, Erin Meyer, Jose Pacas and Matthew Sobek. IPUMS USA: Version 10.0 [dataset]. Minneapolis, MN: IPUMS, 2020. 
+U.S. Bureau. (2020, December 16). American Community Survey (ACS). Retrieved from https://www.census.gov/programs-surveys/acs
+
+
+U.S. Census Bureau. (2016). 2015 American Community Survey Public Use Microdata Samples [Data file]
+
+U.S. Census Bureau. (2019). 2018 American Community Survey Public Use Microdata Samples [Data file]
+
+Vidmar, N., & Ellsworth, P. (1974). Public opinion and the death penalty. Stanford Law Review, 26(6), 1245-1270.
+
+Wang, W., Rothschild, D., Goel, S., & Gelman, A. (2015). Forecasting elections with non-representative polls. International Journal of Forecasting, 31(3), 980-991. doi:10.1016/j.ijforecast.2014.06.001
+
+Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686, https://doi.org/10.21105/joss.01686
+
+Yihui Xie (2019) TinyTeX: A lightweight, cross-platform, and easy-to-maintain LaTeX distribution based on TeX Live. TUGboat 40 (1): 30--32. http://tug.org/TUGboat/Contents/contents40-1.html
+
+Yihui Xie (2020). tinytex: Helper Functions to Install and Maintain TeX Live, and Compile LaTeX Documents. R package version 0.28.
+
+Yihui Xie (2020). knitr: A General-Purpose Package for Dynamic Report Generation in R. R package version 1.30.
+
+ Yihui Xie (2015) Dynamic Documents with R and knitr. 2nd edition. Chapman and Hall/CRC. ISBN 978-1498716963
+
+ Yihui Xie (2014) knitr: A Comprehensive Tool for Reproducible Research in R. In Victoria Stodden, Friedrich Leisch and Roger D. Peng, editors, Implementing Reproducible Computational Research. Chapman and Hall/CRC. ISBN 978-1466561595
+Young, S. (2018). Poll: Voters oppose death penalty for drug dealers. Retrieved from https://www.masslive.com/politics/2018/03/poll_voters_overwhelmingly_opp_1.html
+
+
+
+
